@@ -1,0 +1,201 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+      - alpha
+      - beta
+      - next
+      - 'feature/*'
+    tags:
+      - '*'  # Trigger on all tag pushes
+      
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Environment to deploy (e.g., dev, staging, prod)'
+        required: true
+        default: 'dev'
+
+permissions:
+  contents: read  # Required for checkout
+
+jobs:
+  # Linting Jobs
+  terraform-format-check:
+    name: Terraform Format Check
+    if: |
+      !(
+        github.event_name == 'workflow_dispatch' &&
+        startsWith(github.ref, 'refs/tags/')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set Up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.0.11
+      - name: Check Terraform Formatting
+        run: terraform fmt -check -recursive
+
+  python-format-check:
+    name: Python Format Check
+    if: |
+      !(
+        github.event_name == 'workflow_dispatch' &&
+        startsWith(github.ref, 'refs/tags/')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install Black
+        run: pip install black
+      - name: Run Black Format Check
+        run: black --check -l 120 .
+
+  flake-check:
+    name: Python Linting (Flake8)
+    if: |
+      !(
+        github.event_name == 'workflow_dispatch' &&
+        startsWith(github.ref, 'refs/tags/')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install Flake8
+        run: pip install flake8
+      - name: Run Flake8
+        run: flake8 .
+
+  # safety-check:
+  #   name: Python Dependency Safety Check
+  #   if: |
+  #     !(
+  #       github.event_name == 'workflow_dispatch' &&
+  #       startsWith(github.ref, 'refs/tags/')
+  #     )
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Run Safety CLI to check for vulnerabilities
+  #       uses: pyupio/safety-action@v1
+  #       with:
+  #         api-key: ${{ secrets.SAFETY_API_KEY }}
+  #         args: --detailed-output 
+  
+  tests:
+    name: Tests
+    # Skip if event is 'workflow_dispatch' AND it's triggered by a tag.
+    if: >
+      !(
+        github.event_name == 'workflow_dispatch' &&
+        startsWith(github.ref, 'refs/tags/')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      
+      - name: Create Virtual Environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+      
+      - name: Install Requirements
+        run: |
+          pip install --upgrade pip
+          pip install -r ./requirements/requirements.txt
+          pip install -r ./requirements/requirements-test.txt
+     
+      - name: Run Tests with Pytest
+        run: |
+          pytest -s -vvv -rsPxf --cov=. --cov-append --cov-report term-missing tests
+      
+      - name: Check Test Coverage
+        run: |
+          coverage=$(pytest --cov=. --cov-report term | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+          echo "Coverage: $coverage%"
+          coverage_int=${coverage%.*}
+          if [ "$coverage_int" -lt 90 ]; then
+            echo "Coverage is below 90%! Failing the job."
+            exit 1
+          fi
+
+
+
+
+  # Release Job
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: >
+      (github.event_name == 'push' &&
+       !contains(github.event.head_commit.message, '[skip ci]')) ||
+      (github.event_name == 'workflow_dispatch')
+    permissions:
+      contents: write  # To push tags
+      issues: write
+      pull-requests: write
+      id-token: write
+    outputs:
+      git_short_sha: ${{ steps.capture_tag.outputs.git_short_sha }}
+      release_tag: ${{ steps.capture_tag.outputs.release_tag }}
+      image_tag: ${{ steps.capture_tag.outputs.image_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Semantic Release and Plugins
+        run: |
+          npm install -g semantic-release@21.0.2 @semantic-release/gitlab @semantic-release/exec @semantic-release/changelog @semantic-release/release-notes-generator @semantic-release/commit-analyzer @semantic-release/git semantic-release-helm3
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Run Semantic Release
+        id: semantic_release
+        run: semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+      - name: Capture New Tag and Set Image Tag
+        id: capture_tag
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            RELEASE_TAG=${GITHUB_REF#refs/tags/}
+            IMAGE_TAG=${RELEASE_TAG}
+          else
+            RELEASE_TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+            GIT_SHORT_SHA=$(git rev-parse --short HEAD)
+            IMAGE_TAG=latest-${GIT_SHORT_SHA}
+          fi
+          echo "RELEASE_TAG=${RELEASE_TAG}" >> $GITHUB_ENV
+          echo "GIT_SHORT_SHA=${GIT_SHORT_SHA:-}" >> $GITHUB_ENV
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "git_short_sha=${GIT_SHORT_SHA:-}" >> $GITHUB_OUTPUT
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+

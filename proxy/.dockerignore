@@ -1,0 +1,15 @@
+.git/
+.idea/
+.cache
+**/.git
+**/.github/
+.idea/
+.cache
+**/.env3.8/
+__pycache__
+.pytest_cache/
+pipeline
+src/__pycache__
+.ipynb_checkpoints/
+.github/
+/venv

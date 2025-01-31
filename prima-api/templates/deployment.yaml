@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prima-api.fullname" . }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prima-api.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "prima-api.labels" . | nindent 8 }}
+    spec:
+      containers:
+        # FastAPI App Container
+        - name: app
+          image: "{{ .Values.image.app.repository }}:{{ .Values.image.app.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.app.pullPolicy }}
+          ports:
+            - name: app-port
+              containerPort: {{ .Values.containerPorts.app }}
+              protocol: TCP
+          command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "{{ .Values.containerPorts.app }}"]
+
+          env:
+            {{- range .Values.env }}
+            - name: {{ .name }}
+              value: "{{ .value }}"
+            {{- end }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+        
+        #   Nginx Proxy Container
+        - name: nginx
+          image: "{{ .Values.image.nginx.repository }}:{{ .Values.image.nginx.tag | default "latest" }}"
+          imagePullPolicy: {{ .Values.image.nginx.pullPolicy }}
+          ports:
+            - name: nginx-port
+              containerPort: {{ .Values.containerPorts.nginx }}
+              protocol: TCP
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+          command: ["nginx", "-g", "daemon off;"]  
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "prima-api.fullname" . }}-nginx-config

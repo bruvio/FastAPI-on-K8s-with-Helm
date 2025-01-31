@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "prima-sre"
+version = "0.1.0"
+description = "a FASTapi API to do stuff on dynamoDB and S3"
+authors = ["bruvio <bruno.viola@pm.me>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+fastapi = "^0.115.8"
+uvicorn = "^0.34.0"
+boto3 = "^1.36.9"
+python-multipart = "^0.0.20"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.4"
+moto = "<5"
+python-multipart = "^0.0.20"
+isort = "^6.0.0"
+flake8 = "^7.1.1"
+mypy-extensions = "^1.0.0"
+pep8-naming = "^0.14.1"
+pytest-cov = "^6.0.0"
+pytest-flake8 = "^1.3.0"
+safety = "^3.2.14"
+typing-extensions = "^4.12.2"
+coverage = "^7.6.10"
+httpx = "^0.28.1"
+black = "^25.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

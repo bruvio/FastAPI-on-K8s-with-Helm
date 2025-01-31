@@ -1,0 +1,21 @@
+# Ignore macOS system files
+terraform/.DS_Store
+
+# Ignore Terraform module and provider caches
+terraform/.terraform/
+!terraform/.terraform/providers/
+!terraform/.terraform/modules/
+
+# Ignore specific provider directories
+terraform/.terraform/providers/registry.terraform.io/hashicorp/cloudinit/
+terraform/.terraform/providers/registry.terraform.io/hashicorp/null/
+terraform/.terraform/providers/registry.terraform.io/hashicorp/time/
+terraform/.terraform/providers/registry.terraform.io/hashicorp/tls/
+
+# Ignore Python cache and virtual environments
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+venv/
+.env/

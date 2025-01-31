@@ -1,0 +1,14 @@
+moto<5
+pytest
+python-multipart
+isort
+flake8
+mypy-extensions
+pep8-naming
+pytest-cov
+pytest-flake8
+safety
+typing-extensions
+coverage
+httpx
+black
