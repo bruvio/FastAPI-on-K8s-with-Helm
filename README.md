@@ -271,6 +271,8 @@ curl -v http://********.eu-west-2.elb.amazonaws.com /users
 
 ## Future Enhancements
 
+- use an ingress controller and deploy via ingress
+- use a certificate for TLS/HTTPS managment ()
 - instead of passing credentials to the pod via secret, use a role
 - create ECR repos and store images there
 - update the github workflow to build,tag and push images to ECR using semver
@@ -279,6 +281,7 @@ curl -v http://********.eu-west-2.elb.amazonaws.com /users
 - add terraform plan/apply stages to automatically deploy to AWS
 - remove the provisioning of the vpc and EKS cluster and put it in a different repo, use datasources if needed.
 - create a deploy role that would handle CICD deployments
+- deploy a WAF
 
 
 ## Contributions
