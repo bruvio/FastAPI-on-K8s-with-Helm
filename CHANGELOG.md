@@ -1,3 +1,10 @@
+# 1.0.0 (2025-01-31)
+
+
+### Features
+
+* initial commit ([b082bcf](https://github.com/bruvio/FastAPI-on-K8s-with-Helm/commit/b082bcfe21d7ee149b588371e41676afdcb208d6))
+
 # [1.1.0](https://github.com/bruvio/FastAPI-on-K8s-with-Helm/compare/1.0.0...1.1.0) (2025-01-31)
 
 
