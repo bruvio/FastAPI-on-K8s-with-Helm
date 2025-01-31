@@ -28,19 +28,47 @@ To set up and run this project, ensure you have the following tools installed:
 ## using pip-tools
 The repository contains a Makefile to help with setting up the development environment. Run the following command to create a virtual environment and install dependencies:
 ```
- make env_test
+> make help
+env                  build python env
+env_test             build python env for testing
+pip_compile          create requirements
+pip_upgrade          upgrade requirements
+pip_sync             sync requirements
+black                format code with black
+format               check black code formatting
+flake                check using flake8
+mypy                 check python typing using mypy
+unit                 run unit tests
+coverage             coverage report
+pytest               run all tests and test coverage
+test                 check environment, build, lint, tests
+tf_clear             remove .terraform artifacts
+tf_init              run terraform init for the given ENV
+tf_fmt_validate      format & validate your Terraform
+tf_plan              run terraform plan for the given ENV and VERSION
+tf_apply             run terraform apply for the given ENV and VERSION
+tf_outputs           run terraform output
+kubeconfig           kubeconfig
+help                 print help
 ```
-This uses pip-tools to manage dependencies instead of Poetry. pip-tools ensures deterministic dependency resolution while keeping requirements files concise and easy to audit, whereas Poetry provides additional features like dependency grouping, environment management, and packaging.
 
+This uses pip-tools to manage dependencies instead of Poetry. pip-tools ensures deterministic dependency resolution while keeping requirements files concise and easy to audit, whereas Poetry provides additional features like dependency grouping, environment management, and packaging.
+```
+make env_test
+```
+ 
 ## using Poetry
 
 if you want to use poetry, is still possible
 
 ```
-poetry use env
+poetry use env python3.11
 poetry install
+source .venv/bin/activate
+pytest -vvv -rPxf --cov=. --cov-append --cov-report term-missing tests
 ```
 
+If using poetry better not to skip using the makefile for python related tasks (tests, linting...)
 
 
 ### 3. Infrastructure Provisioning
@@ -105,7 +133,9 @@ The repository contains a Docker Compose file that allows for local deployment:
 The project includes a GitHub Actions workflow that automates:
 
     Running unit tests
-    Deploying to AWS
+    Run static tests: black, flake, terraform linting
+    Semantic release: generate new tag/release, updates changelog and helm chart version
+    build and store as artifacts images (app and proxy)
 
 
 ## Nginx Reverse Proxy
@@ -272,10 +302,10 @@ curl -v http://********.eu-west-2.elb.amazonaws.com /users
 ## Future Enhancements
 
 - use an ingress controller and deploy via ingress
-- use a certificate for TLS/HTTPS managment ()
+- use a certificate for TLS/HTTPS managment
 - instead of passing credentials to the pod via secret, use a role
 - create ECR repos and store images there
-- update the github workflow to build,tag and push images to ECR using semver
+- update the github workflow to build, tag and push images to ECR using semver
 - add stages for terraform checks (trivy?)
 - add stages for security checks (safety?)
 - add terraform plan/apply stages to automatically deploy to AWS
