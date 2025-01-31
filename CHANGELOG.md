@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/bruvio/FastAPI-on-K8s-with-Helm/compare/1.0.0...1.0.1) (2025-01-31)
+
+
+### Bug Fixes
+
+* bump version ([92e2f88](https://github.com/bruvio/FastAPI-on-K8s-with-Helm/commit/92e2f88221f5bd5fac6d55826ad7282a8181e29e))
+
 # 1.0.0 (2025-01-31)
 
 
